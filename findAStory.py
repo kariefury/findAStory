@@ -56,7 +56,7 @@ def orbFeature():
     
     # draw only keypoints location,not size and orientation
     img2 = cv2.drawKeypoints(img,kp,img,color=(0,255,0), flags=0)
-    plt.imshow(img2),plt.show()
+    # plt.imshow(img2),plt.show()
 
 def scanBook(urlToGet,title):
     doc = SimpleDocTemplate("phello.pdf")
@@ -121,12 +121,12 @@ def scanBook(urlToGet,title):
     for each in mostFrequentNN:
         print each
     # Save mostfrequent NN list to csv file...
-    myfile = open("mostfrequentNN.csv", 'wb')
-    wr = csv.writer(myfile,)
+    myFile = open("mostfrequentNN.csv", 'w')
+    print "Opening the file..."
+    print "Truncating the file.  Goodbye!"
+    myFile.truncate()
     for each in mostFrequentNN:
-        length = len(each)
-        for y in range(length):
-            wr.writerow([x[y] for x in mostFrequentNN])
+        myFile.write(each + "\n")
     doc.build(Story, onFirstPage=myFirstPage, onLaterPages=myLaterPages)
     print 'look at the doc.'
     print 'do you see a way to look at each page of text?'
