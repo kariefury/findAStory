@@ -12,7 +12,7 @@ from reportlab.lib.units import inch
 
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 #from hello.models import *
 
