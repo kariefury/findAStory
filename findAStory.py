@@ -121,7 +121,7 @@ def scanBook(urlToGet,title):
     for each in mostFrequentNN:
         print each
     # Save mostfrequent NN list to csv file...
-    myFile = open("mostfrequentNN.csv", 'w')
+    myFile = open("mostfrequentNN.txt", 'w')
     print "Opening the file..."
     print "Truncating the file.  Goodbye!"
     myFile.truncate()
