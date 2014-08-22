@@ -1,5 +1,8 @@
+import json
+import string
+from StringIO import StringIO
 import urllib2
-import csv
+from UserDict import UserDict
 import nltk
 import re
 import operator
@@ -22,6 +25,20 @@ styles = getSampleStyleSheet()
 Title = "Hello world"
 pageinfo = "platypus example"
 giantListOfStopWords = []
+etsy_api_key = 'iqz5tb9wzxg18xd91e8f8yj1'
+etsy_api_secret = '8oexal01qs'
+
+
+quotes = []
+
+
+class SourceItem(UserDict):
+    def __init__(self,source=None):
+        UserDict.__init__(self)
+        self['source'] = source
+        self['text']
+        print 'init complete'
+    print 'instructable Class'
 
 def findWholeWord(w):
     return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
@@ -59,10 +76,9 @@ def orbFeature():
     # plt.imshow(img2),plt.show()
 
 def scanBook(urlToGet,title):
-    doc = SimpleDocTemplate("phello.pdf")
+    doc = SimpleDocTemplate("brothersGrimm.pdf", leftMargin=100,rightMargin=30,topMargin=140,bottomMargin=360 )
     Story = [Spacer(1,2*inch)]
     style = styles["Normal"]
-    
     url = urllib2.urlopen(urlToGet)
     chunk = url.read()
     soup = BeautifulSoup(chunk)
@@ -130,6 +146,354 @@ def scanBook(urlToGet,title):
     doc.build(Story, onFirstPage=myFirstPage, onLaterPages=myLaterPages)
     print 'look at the doc.'
     print 'do you see a way to look at each page of text?'
+    pageEnds = []
+    countPages = 0
+    for each in doc.canv._doc.Pages.pages:
+        countPages += 1
+        rowCount = 0
+        listOfLines = []
+        for row in each.Contents.content.splitlines():
+            listOfLines.append( row )
+            rowCount += 1
+        print listOfLines[rowCount-4]
+        
+        i = 1
+        endNumPage = listOfLines[rowCount-i].find(') Tj T* ET')
+        while ( endNumPage == -1):
+            i += 1
+            endNumPage = listOfLines[rowCount-i].find(') Tj T* ET')
+        pageEnds.append(listOfLines[rowCount-i][endNumPage-14:endNumPage])
+            
+    if ( len(listOfLines) == rowCount ):
+        print 'each page had a row added to list of Lines'
+    else: 
+        print 'check each page contributes a pageEnd'
+    for each in pageEnds:
+        print each
+    # Save mostfrequent NN list to csv file...
+    myFile = open("pageEnds.txt", 'w')
+    print "Opening the file..."
+    print "Truncating the file.  Goodbye!"
+    myFile.truncate()
+    for each in pageEnds:
+        myFile.write(each + "\n")   
+        # How do I find the first few text words...
+        
+            
+            
+        
+    # print doc.canv._doc.Pages.pages[0].Contents.content
+    return mostFrequentNN
+
+def pageMake():
+    print 'assembling page design'
+    print 'building pages requires all of the other events to be completed'
+
+def findItems(phrase, numberOfResults = 10):
+    print 'populating Etsy, Instructables and Thingiverse Fields'
+    # Query Etsy, Thingiverse, Instructables
+     
+    # colorStrings get all phrases about the color from the database
+    
+    newInstruct = instructablesSearch(phrase,numberOfResults)
+    newThingy = searchThingiverse(phrase,10)
+    newEtsy = searchEtsy(phrase,10)
+
+def keywordPhrases(quotes,keywordList): # used to be called colorPhrases 
+    # making keyword phrases 
+    print 'making color phrases'
+    ideaList = []
+    for each in quotes:
+        try:
+            words = each['text'].split()
+            wordPrior = ''
+            wordNext = ''
+            counter = 0
+            # Look at each quote
+            for word in words:
+                word = word.replace(".", "")
+                word = word.replace(",", "")
+                word = word.replace('"', "")
+                word = word.replace('!', "")
+                word = word.replace('?', "")
+                word = word.replace(':', "")
+                word = word.replace(';', "")
+
+                if len(word) > 1:
+                    for keyword in keywordList:
+                        #if word in color:
+                        if findWholeWord(word)(keyword) != None:
+                            # it's a color word! 
+                            # get wordPrior and wordNext
+                            inCount = counter
+                            while inCount > 0:
+                                wordPrior = words[inCount-1]
+                                wordPrior = wordPrior.replace(".", "")
+                                wordPrior = wordPrior.replace(",", "")
+                                wordPrior = wordPrior.replace('"', "")
+                                wordPrior = wordPrior.replace('!', "")
+                                wordPrior = wordPrior.replace('?', "")
+                                wordPrior = wordPrior.replace(':', "")
+                                wordPrior = wordPrior.replace(';', "")
+
+                                foundStopWord = False
+                                for stopWord in giantListOfStopWords:
+                                    if findWholeWord(stopWord)(wordPrior) != None:
+                                        inCount = inCount - 1
+                                        foundStopWord = True
+                                        break
+                                if not foundStopWord:
+                                    inCount = 0
+                            nextCount = counter
+                            while nextCount < len(words)-2:
+                                wordNext = words[nextCount+1]
+                                wordNext = wordNext.replace(".", "")
+                                wordNext = wordNext.replace(",", "")
+                                wordNext = wordNext.replace('"', "")
+                                
+                                wordNext = wordNext.replace('!', "")
+                                wordNext = wordNext.replace('?', "")
+                                wordNext = wordNext.replace(':', "")
+                                wordNext = wordNext.replace(';', "")
+                                foundStopWord = False
+                                giantListOfStopWords.append("the")
+                                giantListOfStopWords.append("a")
+                                for stopWord in giantListOfStopWords:
+                                    if findWholeWord(stopWord)(wordNext) != None:
+                                        nextCount += 1
+                                        foundStopWord = True
+                                        break
+                                if not foundStopWord:
+                                    nextCount = len(words)
+                                giantListOfStopWords.remove("the")
+                                giantListOfStopWords.remove("a")
+                            try:  
+                                newPhrase =  wordPrior +" "+word+" "+wordNext
+                                ideaList.append( newPhrase )
+                            except Exception as e:
+                                print e
+                counter = counter + 1
+        except Exception as e:
+            print e
+    print 'phrases'
+    myFile = open("ideaList.txt", 'w')
+    print "Opening the file..."
+    print "Truncating the file."
+    myFile.truncate()
+    for each in ideaList:
+        myFile.write(each + "\n") 
+        print each
+    return ideaList
+
+def keywordQuote(urlToGet,title,wordList): # used to be called colorQuote
+#    print 'making color quotes'
+    # colors = [' red ',' green ',' blue ',' yellow ',' purple ',' black ']
+    url = urllib2.urlopen(urlToGet)
+    chunk = url.read()
+    soup = BeautifulSoup(chunk)
+    quotes = []
+    counter = 1
+    for paragraph in soup.findAll('p'):
+        for word in wordList:
+            # if color in text:
+            print word
+            print paragraph.getText() 
+            if findWholeWord( word )(paragraph.getText()) != None:    
+                if len(quotes) > 0:
+                    if quotes[len(quotes)-1]['id'] != counter:
+                        newQuote = {'title':title,'text':paragraph.getText(), 'id':counter }
+                        quotes.append(newQuote)
+
+                else:
+                    newQuote = {'title':title,'text':paragraph.getText(), 'id':counter }
+                    quotes.append(newQuote)
+        counter = counter + 1
+    return quotes
+
+def paragraphMake(urlToGet,title): # used to be called searchclient.scanBooks()
+    print 'making paragraphs by scanning the book'
+    url = urllib2.urlopen(urlToGet)
+    chunk = url.read()
+    soup = BeautifulSoup(chunk)
+    paragraphs = []
+    counter = 1
+    for paragraph in soup.findAll('p'):
+        newPara = {}
+        newPara['text'] = paragraph.getText()
+        newPara['title'] = title
+        newPara['id'] = counter
+        if len(newPara['text']) > 1:
+            paragraphs.append(newPara['text'])
+            counter = counter + 1
+    # If I want to do extra validation of paragraphs, here is a good spot.
+def searchEtsy(phrase,maxNumber):
+    try:
+        query = phrase.phrase
+        query = '+'.join(query.split()) #replace spaces with '+' for url format
+        urlFormatSearch = 'https://openapi.etsy.com/v2/listings/active?keywords=' + query +'&limit=12&includes=Images:1&api_key='+etsy_api_key
+        url = urllib2.urlopen(urlFormatSearch)
+        chunk = url.read()
+        io = StringIO( chunk )
+        etsyItems = json.load(io)
+        toRet = []
+        for item in etsyItems['results']:
+            newEtsy = SourceItem('etsy')
+            newEtsy.name = item['title']
+            newEtsy.image = item['Images'][0]['url_170x135']
+            newEtsy.title = phrase.title
+            newEtsy.id = phrase.id
+            newEtsy.phrase = phrase.phrase
+            newEtsy.put()
+            toRet.append(newEtsy)
+        return toRet
+    except Exception as e:
+        print e
+        return []
+def makeInstructable(soup):
+    """Given a BeautifulSoup object from an instructables page,
+    create and return an instructables object. Return None on error."""
+
+    try:
+        instr = SourceItem('instructable')
+
+        meta = soup.findAll('meta')
+        meta = [x for x in meta if x.get('property') is not None]
+        #print meta
+        #print "********************before for loop*************"
+        for x in meta:
+            #print x.get('property'), x.get('content')
+            if "og:title" in x.get('property'):
+                instr.name = x.get('content')
+            #elif "og:type" in x.get('property'):
+            #    otype = x.get('content')
+            elif "og:url" in x.get('property'):
+                instr.url = x.get('content')
+            elif "og:image" in x.get('property'):
+                # print "image is %s" % x.get('content')
+                instr.image = x.get('content')
+            elif "og:description" in x.get('property'):
+                instr.description = x.get('content')
+        return instr
+    except Exception as e:
+        print e
+        return None
+def instructablesSearch(phrase, maxNumber, detailed=False,returnType='dictionary' ):
+    """Given a string search query, return a list of Instructables objects.
+    The list will contain no more than 'maxNumber' items and can be empty.
+    If 'detailed' is set to False, each object has only the title, image, and
+    url (no description), but returns quickly. If true, each object also has
+    description populated, but requires fetching a new html page for every
+    object."""
+
+    try:
+        query = phrase
+        query = '+'.join(query.split()) #replace spaces with '+' for url format
+        soup = BeautifulSoup(urllib2.urlopen("http://www.instructables.com/tag/type-id/featured-true/?sort=none&q=" + query)) # soup object of search results page
+        res = soup.find(id="infinite-search-results")
+        res = res.findAll('li')
+        if (maxNumber < len(res)):
+            res = res[:maxNumber]
+
+        toRet = []
+
+        if not detailed:
+            for x in res:
+                instr = SourceItem('instructable')
+                instr.name = x.a.get('title') # ISSUE: this will cut off titles with
+                    # quotes. Can use #instr.name = x.div.div.a.get_text() instead,
+                    # but this will cut off titles that are longer than the two-line
+                    # instructables title space...
+                instr.image = x.a.img.get('src')
+                instr.url = "http://www.instructables.com" + x.a.get('href')
+                #instr.description = None
+                #instr.title = phrase.title
+                #instr.id = phrase.id
+                #instr.phrase = phrase.phrase
+                instr.put()
+                toRet.append(instr)
+
+        elif detailed:
+            for x in res:
+                soup = BeautifulSoup(urllib2.urlopen("http://www.instructables.com" + x.a.get('href')))
+                toRet.append(makeInstructable(soup))
+
+        toRet = [x for x in toRet if x is not None]
+        return toRet
+
+    except Exception as e:
+        print e
+        return []
+def getThingiverse(url):
+    """Given a url for a Thingiverse page, extract content and return
+    Thingiverse idea. Return None on error."""
+    try:
+        soup = BeautifulSoup(urllib2.urlopen(url))
+
+        newThing = SourceItem('thingiverse')
+
+        newThing.url = url
+        newThing.name = soup.find('h1').string
+        newThing.image = soup.find(attrs={"class": "thing-page-image featured"}).img.get('src')
+        print newThing.image
+        s = soup.find(id="description")
+        s = str(s)
+        start = string.find(s,">")
+        end = string.find(s,"</div>",start)
+        s = s[start+1:end]
+
+        while string.find(s,'<') is not -1:
+            start = string.find(s,'<')
+            end = string.rfind(s,'>')
+            s = s.replace(s[start:end+1],"")
+
+        newThing.description = s.strip()
+
+        return newThing
+
+    except Exception as e:
+        print e
+        return None
+def searchThingiverse(phrase, number, detailed=False):
+    """Search query on Thingiverse, returning a list of a maximum of number
+    Thingiverse objects. The list can be empty. If detailed is False,
+    the descriptions will be ommitted from each object, but the search will
+    return faster."""
+
+    try:
+        query = phrase.phrase
+        query = '+'.join(query.split())
+        baseurl = "http://www.thingiverse.com/search/prolific/things/page:"
+        endurl = "?q="
+        allThings = []
+    
+        try:
+            for i in range(1, int(number - 1) / 12 + 2):
+                soup = BeautifulSoup(urllib2.urlopen(baseurl + str(i) + endurl + query))
+                results = soup.findAll(attrs={"data-thing-id": True})
+                if detailed:
+                    for x in results:
+                        allThings.append(getThingiverse("http://www.thingiverse.com" + x.div.a.get('href')))
+    
+                elif not detailed:
+                    for x in results:
+                        newThing = SourceItem('thingiverse')
+                        newThing.name = x.get('title')
+                        newThing.url = "http://www.thingiverse.com/thing:" + x.get('data-thing-id')
+                        newThing.image = x.img.get('src')
+                        print newThing.image
+#                         newThing.id = phrase.id
+#                         newThing.title = phrase.title
+#                         newThing.fileName =  newThing.name.replace(" ", "") + ".png"
+#                         newThing.phrase = phrase.phrase
+#                         newThing.put()
+                        allThings.append(newThing)
+    
+            allThings = [x for x in allThings if x is not None]
+            return allThings[:number]
+        except:
+            return []
+    except:
+        return []
 
 if __name__ == "__main__":
     print 'here I am'
@@ -138,9 +502,16 @@ if __name__ == "__main__":
     resString = next(res.results).text
     print resString
     #orbFeature()
-    scanBook('http://swift-door-556.appspot.com/book7/','Alice In Wonderland')
-
+    urlToGet = 'http://swift-door-556.appspot.com/book7/'
+    title = 'The Brothers Grimm' 
+    keywords = scanBook(urlToGet,title)
+#     keywordQuotes = keywordQuote(urlToGet,title,keywords)
+#     phraseList = keywordPhrases(keywordQuotes,keywords)
+#     for each in phraseList:
+#         findItems(each,10)
+    # Now there are 2 primary 
 print 'all done now'
+
 
 giantListOfStopWords = ["a's",
 "able",
