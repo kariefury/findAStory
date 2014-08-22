@@ -171,12 +171,12 @@ def scanBook(urlToGet,title):
     for each in pageEnds:
         print each
     # Save mostfrequent NN list to csv file...
-    myFile = open("pageEnds.txt", 'w')
+    pageFile = open("pageEnds.txt", 'w')
     print "Opening the file..."
     print "Truncating the file.  Goodbye!"
-    myFile.truncate()
+    pageFile.truncate()
     for each in pageEnds:
-        myFile.write(each + "\n")   
+        pageFile.write(each + "\n")   
         # How do I find the first few text words...
         
             
